@@ -1,0 +1,70 @@
+﻿@page "/tasklist"
+@using Laminal.Shared.Services
+@using Stl.Fusion.Blazor
+@using System.Collections.ObjectModel;
+@inject HttpClient httpClient
+@inject ITaskService Tasks
+
+<MudContainer MaxWidth="MaxWidth.Large">
+    <h3>TaskList</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Assignee</th>
+                <th>Status</th>
+                <th>WorkHrs</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var task in tasks)
+            {
+                <tr>
+                    <td>@task.Id</td>
+                    <td>@task.Name</td>
+                    <td>@task.Assignee?.Name</td>
+                    <td>@task.Status</td>
+                    @*<td>@task.WorkHrs</td>*@
+                </tr>
+            }
+        </tbody>
+    </table>
+
+@*    <MudDataGrid T="Task" MultiSelection="true" Items="@Elements" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+                 Hideable="true" RowClick="@RowClicked" SelectedItemsChanged="@SelectedItemsChanged">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Tasks</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="Task" />
+            <Column T="Task" Field="Id" Title="Id" Sortable="false" Filterable="false" />
+            <Column T="Task" Field="Name" />
+            <Column T="Task" Field="Status" />
+            <Column T="Task" Field="TaskType" />
+            <Column T="Task" Field="WorkHrs" />
+            <Column T="Task" Field="CommittedWorkHrs" />
+            <Column T="Task" Field="Iteration" />
+            <Column T="Task" Field="Assignee" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="Task" />
+        </PagerContent>
+    </MudDataGrid>*@
+</MudContainer>
+
+@code {
+    IEnumerable<Task> tasks;
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        Console.WriteLine("Hello");
+        // todo
+        tasks = await Tasks.GetTasks(0);
+        //var tasks = await httpClient.GetFromJsonAsync<List<Task>>("Tasks/GetTasks");
+        //Elements = new ObservableCollection<Task>(tasks);
+    }
+}
