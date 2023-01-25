@@ -41,7 +41,7 @@ namespace Laminal.Server.Services
         public virtual async ValueTask SetTaskProperty(int taskId, Shared.Models.TaskProperty property)
         {
             var task = await _context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
-            task.Properties.FirstOrDefault(v => v.Name == property.Name).Value = property;
+            task.Properties.FirstOrDefault(v => v.Name == property.Name).Value = property.Value;
             await _context.SaveChangesAsync();
         }
 

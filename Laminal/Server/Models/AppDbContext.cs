@@ -7,7 +7,7 @@ namespace Laminal.Server.Models
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<Shared.Models.Task> Tasks { get; set; }
-        //public DbSet<Shared.Models.TaskProperty> TaskProperties { get; set; }
+        public DbSet<Shared.Models.TaskProperty> TaskProperties { get; set; }
         public DbSet<TemplateFeature> TemplateTasks { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<Resource> Resources { get; set; }
@@ -15,7 +15,7 @@ namespace Laminal.Server.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.Entity<Shared.Models.Task>().HasMany<TaskProperty>();
+            modelBuilder.Entity<Shared.Models.Task>().HasMany<TaskProperty>();
 
             var project = new Project { Id = 1, Name = "Project 1" };
 
