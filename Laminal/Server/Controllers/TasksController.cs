@@ -1,10 +1,12 @@
 ﻿using Laminal.Server.Models;
+using Laminal.Shared.Models;
 using Laminal.Shared.Services;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Stl.Fusion;
 using Stl.Fusion.Server;
+using System.Security.Cryptography;
 
 namespace Laminal.Server.Controllers
 {
@@ -18,6 +20,42 @@ namespace Laminal.Server.Controllers
             _context = context;
             _logger = logger;
             _taskService = taskService;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> InitializeDb()
+        {
+
+            var project = new Project { /*Id = 1,*/ Name = "Project 1" };
+            await _context.Projects.AddAsync(project);
+
+            var resources = new List<Resource>();
+            for(int i = 0; i < 2; i++)
+            {
+                var rsc = new Resource { /*Id = i,*/ Name = $"Resource {i}", OwnerProject = project };
+                resources.Add(rsc);
+                await _context.Resources.AddAsync(rsc);
+            }
+
+            var tasks = new List<Shared.Models.Task>();
+            for(int i = 0; i < 10; i++)
+            {
+                var task = new Shared.Models.Task
+                {
+                    //Id = i,
+                    Name = $"Task {i}",
+                    Assignee = resources[i % 2],
+                    OwnerProject = project
+                };
+                tasks.Add(task);
+                await _context.Tasks.AddAsync(task);
+            }
+            project.Resources = resources;
+            project.Tasks = tasks;
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         [HttpGet, Publish]

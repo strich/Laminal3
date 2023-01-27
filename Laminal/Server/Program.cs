@@ -21,7 +21,7 @@ namespace Laminal
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
-            var cnn = new SqliteConnection("Filename=:memory:");
+            var cnn = new SqliteConnection("Filename=LocalDatabase.db");
             cnn.Open();
             builder.Services.AddDbContext<AppDbContext>(options =>
             {

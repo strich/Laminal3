@@ -4,6 +4,7 @@ namespace Laminal.Shared.Models
 {
     public class TaskProperty
     {
+        public int Id { get; set; }
         public string Name { get; set; } // TODO put this somewhere else to save memory and serialization time
         public string Value { get; set; }
     }
