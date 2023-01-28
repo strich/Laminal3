@@ -33,7 +33,7 @@ namespace Laminal.Server.Services
             return task.Properties.FirstOrDefault(v => v.Name == name);
         }
 
-        public virtual async Task<List<Shared.Models.Task>> GetTasks(int projectId)
+        public virtual async Task<List<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken)
         {
             return await _context.Tasks.Include(t => t.Properties).ToListAsync();
         }

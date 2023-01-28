@@ -59,8 +59,8 @@ namespace Laminal.Server.Controllers
         }
 
         [HttpGet, Publish]
-        public async Task<List<Shared.Models.Task>> GetTasks(int projectId)
-            => await _taskService.GetTasks(projectId);
+        public async Task<List<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken)
+            => await _taskService.GetTasks(projectId, cancellationToken);
 
         [HttpGet, Publish]
         public async Task<Shared.Models.Task> GetTask(int taskId)

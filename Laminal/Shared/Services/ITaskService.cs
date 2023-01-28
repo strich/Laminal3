@@ -7,7 +7,7 @@ namespace Laminal.Shared.Services
     public interface ITaskService : IComputeService
     {
         [ComputeMethod]
-        Task<List<Models.Task>> GetTasks(int projectId);
+        Task<List<Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken);
         [ComputeMethod]
         Task<Models.Task> GetTask(int taskId);
         [ComputeMethod]

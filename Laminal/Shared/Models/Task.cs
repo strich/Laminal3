@@ -1,12 +1,16 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Laminal.Shared.Models
 {
     public class TaskProperty
     {
         public int Id { get; set; }
-        public string Name { get; set; } // TODO put this somewhere else to save memory and serialization time
+        public string Name { get; set; } // TODO put this somewhere else to save memory and serialization time?
         public string Value { get; set; }
+
+        public T GetValue<T>() => (T)Convert.ChangeType(Value, typeof(T));
+        public void SetValue<T>(T value) => Value = (string)Convert.ChangeType(value, typeof(string));
     }
 
     public class Task
@@ -17,11 +21,39 @@ namespace Laminal.Shared.Models
         public TaskStatus Status { get; set; }
         public TaskType TaskType { get; set; }
         //public int WorkHrs { get; set; }
-        //public int WorkHrs
-        //{
-        //    get => (int)Properties.FirstOrDefault(v => v.Name == nameof(WorkHrs)).Value;
-        //    set => Properties[nameof(WorkHrs)] = new TaskProperty { Name = nameof(WorkHrs), Value = value };
-        //}
+        [NotMapped]
+        public int WorkHrs
+        {
+            get => GetProperty<int>(nameof(WorkHrs), out var val) ? val : default;
+            set => SetProperty(nameof(WorkHrs), value);
+        }
+
+        bool GetProperty<T>(string name, out T propertyValue)
+        {
+            for(int i = 0; i < Properties.Count; i++)
+            {
+                if(string.Equals(Properties[i].Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    propertyValue = Properties[i].GetValue<T>();
+                    return true;
+                }
+            }
+            propertyValue = default;
+            return false;
+        }
+
+        bool SetProperty<T>(string name, T propertyValue)
+        {
+            for(int i = 0; i < Properties.Count; i++)
+            {
+                if(string.Equals(Properties[i].Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    Properties[i].SetValue(propertyValue);
+                    return true;
+                }
+            }
+            return false;
+        }
 
         //public int CommittedWorkHrs { get; set; }
 
