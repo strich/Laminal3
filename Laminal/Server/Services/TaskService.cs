@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
 using Stl.Fusion.EntityFramework;
+using System.Threading;
 
 namespace Laminal.Server.Services
 {
@@ -46,6 +47,7 @@ namespace Laminal.Server.Services
         {
             //await using var context = await _dbHub.CreateCommandDbContext();
             await using var context = _dbHub.CreateDbContext(true);
+
             var tp = await context.TaskProperties.FirstOrDefaultAsync(t => t.Id == command.TaskPropertyId);
             tp.Value = command.Value;
             await context.SaveChangesAsync();

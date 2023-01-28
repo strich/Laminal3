@@ -87,8 +87,12 @@ namespace Laminal
             app.UseBlazorFrameworkFiles();
             app.UseStaticFiles();
 
+            app.UseWebSockets(new WebSocketOptions()
+            { // We obviously need this
+                KeepAliveInterval = TimeSpan.FromSeconds(30), // Just in case
+            });
             app.UseRouting();
-
+            app.MapFusionWebSocketServer();
             app.MapRazorPages();
             app.MapControllers();
             app.MapFallbackToFile("index.html");
