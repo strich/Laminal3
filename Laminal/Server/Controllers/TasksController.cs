@@ -7,34 +7,39 @@ using Microsoft.EntityFrameworkCore;
 using Stl.Fusion;
 using Stl.Fusion.Server;
 using System.Security.Cryptography;
+using Stl.Fusion.EntityFramework;
+using Task = System.Threading.Tasks.Task;
 
 namespace Laminal.Server.Controllers
 {
     public class TasksController : BaseAPIController, ITaskService
     {
+        private readonly DbHub<AppDbContext> _dbHub;
         readonly ITaskService _taskService;
 
-        public TasksController(AppDbContext context, ILogger<TasksController> logger, IConfiguration config, ITaskService taskService)
-            : base(context, logger, config)
+        public TasksController(DbHub<AppDbContext> dbHub, ILogger<TasksController> logger, IConfiguration config, ITaskService taskService)
+            : base(logger, config)
         {
-            _context = context;
             _logger = logger;
+            _dbHub = dbHub;
             _taskService = taskService;
         }
 
         [HttpPost]
         public async Task<IActionResult> InitializeDb()
         {
-
+            //await using var context = await _dbHub.CreateCommandDbContext(HttpContext.RequestAborted);
+            await using var context = _dbHub.CreateDbContext(true);
+            
             var project = new Project { /*Id = 1,*/ Name = "Project 1" };
-            await _context.Projects.AddAsync(project);
+            await context.Projects.AddAsync(project);
 
             var resources = new List<Resource>();
             for(int i = 0; i < 2; i++)
             {
                 var rsc = new Resource { /*Id = i,*/ Name = $"Resource {i}", OwnerProject = project };
                 resources.Add(rsc);
-                await _context.Resources.AddAsync(rsc);
+                await context.Resources.AddAsync(rsc);
             }
 
             var tasks = new List<Shared.Models.Task>();
@@ -48,19 +53,30 @@ namespace Laminal.Server.Controllers
                     OwnerProject = project
                 };
                 tasks.Add(task);
-                await _context.Tasks.AddAsync(task);
+                await context.Tasks.AddAsync(task);
+
+                for(int x = 0; x < 3; x++)
+                {
+                    var tp = new TaskProperty()
+                    {
+                        Name = $"Property {x}",
+                        Value = ""
+                    };
+                    task.Properties.Add(tp);
+                    await context.TaskProperties.AddAsync(tp);
+                }
             }
             project.Resources = resources;
             project.Tasks = tasks;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             return Ok();
         }
 
         [HttpGet, Publish]
-        public async Task<List<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken)
-            => await _taskService.GetTasks(projectId, cancellationToken);
+        public async Task<List<Shared.Models.Task>> GetTasks(int projectId)
+            => await _taskService.GetTasks(projectId);
 
         [HttpGet, Publish]
         public async Task<Shared.Models.Task> GetTask(int taskId)
@@ -82,9 +98,9 @@ namespace Laminal.Server.Controllers
         //}
 
         [HttpPost]
-        public async ValueTask SetTaskProperty(int taskId, Shared.Models.TaskProperty property)
+        public async Task SetTaskProperty([FromBody] SetTaskPropertyCommand command)
         {
-            await _taskService.SetTaskProperty(taskId, property);
+            await _taskService.SetTaskProperty(command);
         }
     }
 }

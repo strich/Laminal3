@@ -6,8 +6,8 @@ namespace Laminal.Shared.Models
     public class TaskProperty
     {
         public int Id { get; set; }
-        public string Name { get; set; } // TODO put this somewhere else to save memory and serialization time?
-        public string Value { get; set; }
+        public string Name { get; set; } // TODO put this somewhere else to save memory and serialization time
+        public string Value { get; set; } = string.Empty;
 
         public T GetValue<T>() => (T)Convert.ChangeType(Value, typeof(T));
         public void SetValue<T>(T value) => Value = (string)Convert.ChangeType(value, typeof(string));
@@ -24,11 +24,25 @@ namespace Laminal.Shared.Models
         [NotMapped]
         public int WorkHrs
         {
-            get => GetProperty<int>(nameof(WorkHrs), out var val) ? val : default;
-            set => SetProperty(nameof(WorkHrs), value);
+            get => TryGetPropertyValue<int>(nameof(WorkHrs), out var val) ? val : default;
+            set => SetPropertyValue(nameof(WorkHrs), value);
         }
 
-        bool GetProperty<T>(string name, out T propertyValue)
+        bool TryGetProperty(string name, out TaskProperty property)
+        {
+            for(int i = 0; i < Properties.Count; i++)
+            {
+                if(string.Equals(Properties[i].Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    property = Properties[i];
+                    return true;
+                }
+            }
+            property = default;
+            return false;
+        }
+
+        bool TryGetPropertyValue<T>(string name, out T propertyValue)
         {
             for(int i = 0; i < Properties.Count; i++)
             {
@@ -42,7 +56,7 @@ namespace Laminal.Shared.Models
             return false;
         }
 
-        bool SetProperty<T>(string name, T propertyValue)
+        bool SetPropertyValue<T>(string name, T propertyValue)
         {
             for(int i = 0; i < Properties.Count; i++)
             {

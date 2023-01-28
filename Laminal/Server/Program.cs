@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Stl.Fusion;
+using Stl.Fusion.EntityFramework;
 using Stl.Fusion.Server;
+using Stl.Time;
 
 namespace Laminal
 {
@@ -21,15 +23,44 @@ namespace Laminal
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
-            var cnn = new SqliteConnection("Filename=LocalDatabase.db");
-            cnn.Open();
-            builder.Services.AddDbContext<AppDbContext>(options =>
-            {
-                //options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));                
-                options.UseSqlite(cnn);
+            builder.Services.AddDbContextFactory<AppDbContext>(db => {
+                //db.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+                db.UseSqlite("Filename=LocalDatabase.db");
             });
+            // AddDbContextServices is just a convenience builder allowing
+            // to omit DbContext type in misc. normal and extension methods 
+            // it has
+            builder.Services.AddDbContextServices<AppDbContext>(db => {
+                // Uncomment if you'll be using AddRedisOperationLogChangeTracking 
+                // db.AddRedisDb("localhost", "Fusion.Tutorial.Part10");
 
-            builder.Services.AddScoped<ITaskService, TaskService>();
+                // This call enabled Operations Framework (OF) for AppDbContext. 
+                db.AddOperations(operations => {
+                    operations.ConfigureOperationLogReader(_ => new()
+                    {
+                        // We use FileBasedDbOperationLogChangeTracking, so unconditional wake up period
+                        // can be arbitrary long - all depends on the reliability of Notifier-Monitor chain.
+                        // See what .ToRandom does - most of timeouts in Fusion settings are RandomTimeSpan-s,
+                        // but you can provide a normal one too - there is an implicit conversion from it.
+                        UnconditionalCheckPeriod = TimeSpan.FromSeconds(60/*Env.IsDevelopment() ? 60 : 5*/).ToRandom(0.05),
+                    });
+                    // And this call tells that hosts will use a shared file
+                    // to "message" each other that operation log was updated.
+                    // In fact, they'll just be "touching" this file once
+                    // this happens and watch for change of its modify date.
+                    // You shouldn't use this mechanism in real multi-host
+                    // scenario, but it works well if you just want to test
+                    // multi-host invalidation on a single host by running
+                    // multiple processes there.
+                    operations.AddFileBasedOperationLogChangeTracking();
+
+                    // Or, if you use PostgreSQL, use this instead of above line
+                    // operations.AddNpgsqlOperationLogChangeTracking();
+
+                    // Or, if you use Redis, use this instead of above line
+                    // operations.AddRedisOperationLogChangeTracking();
+                });
+            });
 
             // Fusion:
             var fusion = builder.Services.AddFusion();

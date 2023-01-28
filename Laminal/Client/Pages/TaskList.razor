@@ -1,11 +1,12 @@
 ﻿@page "/tasklist"
 @using Laminal.Shared.Services
+@using Stl.Fusion.Authentication;
 @using Stl.Fusion.Blazor
 @using System.Collections.ObjectModel;
 @inject HttpClient httpClient
 @inject ITaskService Tasks
 
-@*<MudContainer MaxWidth="MaxWidth.Large">*@
+<MudContainer MaxWidth="MaxWidth.Large">
     <h3>TaskList</h3>
 
     <table class="table">
@@ -15,19 +16,27 @@
                 <th>Name</th>
                 <th>Assignee</th>
                 <th>Status</th>
-                <th>WorkHrs</th>
+                @*<th>WorkHrs</th>*@
             </tr>
         </thead>
         <tbody>
-            @foreach(var task in tasks)
-            {
-                <tr>
-                    <td>@task.Id</td>
-                    <td>@task.Name</td>
-                    <td>@task.Assignee?.Name</td>
-                    <td>@task.Status</td>
-                    @*<td>@task.WorkHrs</td>*@
-                </tr>
+            @if (tasks != null) {
+                @foreach (var task in tasks) {
+                    <tr>
+                        <td>@task.Id</td>
+                        <td>@task.Name</td>
+                        <td>@task.Assignee?.Name</td>
+                        <td>@task.Status</td>
+                        @foreach(var tp in task.Properties)
+                        {
+                            <td>
+                                <MudTextField @bind-Value="tp.Value" Label="Standard" Variant="Variant.Text"
+                                  DebounceInterval="300" OnDebounceIntervalElapsed="@(e => OnDebounceIntervalElapsed(e, tp))"></MudTextField>
+                            </td>
+                        }
+                        @*<td>@task.WorkHrs</td>*@
+                    </tr>
+                }
             }
         </tbody>
     </table>
@@ -55,16 +64,25 @@
             <MudDataGridPager T="Task" />
         </PagerContent>
     </MudDataGrid>*@
-@*</MudContainer>*@
+</MudContainer>
 
 @code {
-    IEnumerable<Task> tasks;
+    //[Inject] private Session Session { get; init; } = null!;
+
+    IEnumerable<Task>? tasks;
     protected override async System.Threading.Tasks.Task OnInitializedAsync()
     {
         Console.WriteLine("Hello");
         // todo
-        tasks = await Tasks.GetTasks(0, new CancellationToken());
+        tasks = await Tasks.GetTasks(0);
         //var tasks = await httpClient.GetFromJsonAsync<List<Task>>("Tasks/GetTasks");
         //Elements = new ObservableCollection<Task>(tasks);
+    }
+
+    async void OnDebounceIntervalElapsed(string text, Laminal.Shared.Models.TaskProperty tp)
+    {
+        Console.WriteLine("OnDebounceIntervalElapsed");
+        tp.SetValue(text);
+        await Tasks.SetTaskProperty(new SetTaskPropertyCommand(tp.Id, text));
     }
 }

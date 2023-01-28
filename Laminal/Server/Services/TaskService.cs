@@ -5,44 +5,50 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
+using Stl.Fusion.EntityFramework;
 
 namespace Laminal.Server.Services
 {
     public class TaskService : ITaskService
     {
-        AppDbContext _context;
+        private readonly DbHub<AppDbContext> _dbHub;
         ILogger<BaseAPIController> _logger;
         IConfiguration _configuration;
 
-        public TaskService(AppDbContext context, ILogger<BaseAPIController> logger, IConfiguration config)
+        public TaskService(DbHub<AppDbContext> dbHub, ILogger<BaseAPIController> logger, IConfiguration config)
         {
-            _context = context;
+            _dbHub = dbHub;
             _logger = logger;
             _configuration = config;
         }
 
         public virtual async Task<Shared.Models.Task> GetTask(int taskId)
         {
-            var task = await _context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
+            await using var context = _dbHub.CreateDbContext();
+            var task = await context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
             return task;
         }
 
         public virtual async Task<Shared.Models.TaskProperty> GetTaskProperty(int taskId, string name)
         {
-            var task = await _context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
+            await using var context = _dbHub.CreateDbContext();
+            var task = await context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
             return task.Properties.FirstOrDefault(v => v.Name == name);
         }
 
-        public virtual async Task<List<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken)
+        public virtual async Task<List<Shared.Models.Task>> GetTasks(int projectId)
         {
-            return await _context.Tasks.Include(t => t.Properties).ToListAsync();
+            await using var context = _dbHub.CreateDbContext();
+            return await context.Tasks.Include(t => t.Properties).ToListAsync();
         }
 
-        public virtual async ValueTask SetTaskProperty(int taskId, Shared.Models.TaskProperty property)
+        public virtual async Task SetTaskProperty(SetTaskPropertyCommand command)
         {
-            var task = await _context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
-            task.Properties.FirstOrDefault(v => v.Name == property.Name).Value = property.Value;
-            await _context.SaveChangesAsync();
+            //await using var context = await _dbHub.CreateCommandDbContext();
+            await using var context = _dbHub.CreateDbContext(true);
+            var tp = await context.TaskProperties.FirstOrDefaultAsync(t => t.Id == command.TaskPropertyId);
+            tp.Value = command.Value;
+            await context.SaveChangesAsync();
         }
 
         //public async Task PatchTask(int id, JsonPatchDocument<Shared.Models.Task> patchDoc)
