@@ -3,8 +3,18 @@
 @using Stl.Fusion.Authentication;
 @using Stl.Fusion.Blazor
 @using System.Collections.ObjectModel;
+@using Stl.Fusion;
+@using Stl.Fusion.UI;
+@inherits MixedStateComponent<TaskList.Model, TaskList.LocalsModel>
 @inject HttpClient httpClient
 @inject ITaskService Tasks
+@inject UICommander UICommander
+
+@{
+    var locals = MutableState.Value;
+    var state = State.LastNonErrorValue;
+    var error = State.Error;
+}
 
 <MudContainer MaxWidth="MaxWidth.Large">
     <h3>TaskList</h3>
@@ -20,8 +30,9 @@
             </tr>
         </thead>
         <tbody>
-            @if (tasks != null) {
-                @foreach (var task in tasks) {
+            @*@if (state.Tasks != null) {*@
+                @foreach(var task in state.Tasks)
+                {
                     <tr>
                         <td>@task.Id</td>
                         <td>@task.Name</td>
@@ -37,7 +48,7 @@
                         @*<td>@task.WorkHrs</td>*@
                     </tr>
                 }
-            }
+            @*}*@
         </tbody>
     </table>
 
@@ -69,14 +80,58 @@
 @code {
     //[Inject] private Session Session { get; init; } = null!;
 
-    IEnumerable<Task>? tasks;
-    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    public class LocalsModel
     {
-        Console.WriteLine("Hello");
-        // todo
-        tasks = await Tasks.GetTasks(0);
-        //var tasks = await httpClient.GetFromJsonAsync<List<Task>>("Tasks/GetTasks");
-        //Elements = new ObservableCollection<Task>(tasks);
+        private string _name = "";
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if(_name == value)
+                    return;
+                _name = value;
+                IsNameModified = true;
+            }
+        }
+
+        public bool IsNameModified { get; set; }
+    }
+
+    public record Model
+    {
+        public IEnumerable<Task>? Tasks { get; init; } = new List<Task>();
+    }
+
+    protected override void OnInitialized()
+    {
+        // Mutable state content is updated implicitly via bind-* here,
+        // and since such a change doesn't trigger State recompute + StateHasChanged(),
+        // we enable this feat. to make it happen on event.
+        MustCallStateHasChangedAfterEvent = true;
+        base.OnInitialized();
+    }
+
+    protected override MutableState<LocalsModel>.Options GetMutableStateOptions() => new() { InitialValue = new() };
+
+    protected override ComputedState<Model>.Options GetStateOptions() => new() { InitialValue = new() };
+
+    protected override async Task<Model> ComputeState(CancellationToken cancellationToken)
+    {
+        var tasks = await Tasks.GetTasks(1, cancellationToken);
+        if(!MutableState.Value.IsNameModified) ResetName("Test Name");
+        return new Model()
+        {
+            Tasks = tasks
+        };
+    }
+
+    private void ResetName(string name)
+    {
+        MutableState.Value.Name = name;
+        MutableState.Value.IsNameModified = false;
+        MutableState.Invalidate();
     }
 
     async void OnDebounceIntervalElapsed(string text, Laminal.Shared.Models.TaskProperty tp)

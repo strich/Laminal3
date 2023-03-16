@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.JsonPatch;
 using Stl.CommandR;
+using Stl.CommandR.Configuration;
 using Stl.Fusion;
 using Stl.Fusion.Authentication;
 using System.Reactive;
@@ -10,13 +11,13 @@ namespace Laminal.Shared.Services
     public interface ITaskService : IComputeService
     {
         [ComputeMethod]
-        Task<List<Models.Task>> GetTasks(int projectId);
+        Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default);
         [ComputeMethod]
-        Task<Models.Task> GetTask(int taskId);
+        Task<Models.Task> GetTask(int taskId, CancellationToken cancellationToken = default);
         [ComputeMethod]
-        Task<Models.TaskProperty> GetTaskProperty(int taskId, string name);
-        //[ComputeMethod]
-        Task SetTaskProperty(SetTaskPropertyCommand command);
+        Task<Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default);
+        [CommandHandler]
+        Task SetTaskProperty(SetTaskPropertyCommand command, CancellationToken cancellationToken = default);
         //Task PatchTask(int id, JsonPatchDocument<Models.Task> patchDoc);
     }
 

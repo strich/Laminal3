@@ -21,6 +21,10 @@ namespace Laminal
             // Add services to the container.
 
             builder.Services.AddControllersWithViews();
+                //.AddJsonOptions(options => 
+                //{
+                //    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                //});
             builder.Services.AddRazorPages();
 
             builder.Services.AddDbContextFactory<AppDbContext>(db => {
@@ -31,6 +35,17 @@ namespace Laminal
             // to omit DbContext type in misc. normal and extension methods 
             // it has
             builder.Services.AddDbContextServices<AppDbContext>(db => {
+                db.AddEntityResolver<int, Shared.Models.Task>(_ => new()
+                {
+                    QueryTransformer = task => task.Include(c => c.Properties)
+                });
+                db.AddEntityResolver<int, Shared.Models.TaskProperty>();
+                db.AddEntityResolver<int, Shared.Models.Project>(_ => new()
+                {
+                    QueryTransformer = project => project.Include(c => c.Tasks)
+                });
+                db.AddEntityResolver<int, Shared.Models.Resource>();
+
                 // Uncomment if you'll be using AddRedisOperationLogChangeTracking 
                 // db.AddRedisDb("localhost", "Fusion.Tutorial.Part10");
 
@@ -88,7 +103,7 @@ namespace Laminal
             app.UseStaticFiles();
 
             app.UseWebSockets(new WebSocketOptions()
-            { // We obviously need this
+            {
                 KeepAliveInterval = TimeSpan.FromSeconds(30), // Just in case
             });
             app.UseRouting();

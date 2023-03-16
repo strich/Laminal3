@@ -75,19 +75,19 @@ namespace Laminal.Server.Controllers
         }
 
         [HttpGet, Publish]
-        public async Task<List<Shared.Models.Task>> GetTasks(int projectId)
-            => await _taskService.GetTasks(projectId);
+        public async Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default)
+            => await _taskService.GetTasks(projectId, cancellationToken);
 
         [HttpGet, Publish]
-        public async Task<Shared.Models.Task> GetTask(int taskId)
+        public async Task<Shared.Models.Task> GetTask(int taskId, CancellationToken cancellationToken = default)
         {
-            return await _taskService.GetTask(taskId);
+            return await _taskService.GetTask(taskId, cancellationToken);
         }
 
         [HttpGet, Publish]
-        public async Task<Shared.Models.TaskProperty> GetTaskProperty(int taskId, string name)
+        public async Task<Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default)
         {
-            return await _taskService.GetTaskProperty(taskId, name);
+            return await _taskService.GetTaskProperty(tpId, cancellationToken);
         }
 
         //[HttpPatch("{id}")]
@@ -97,10 +97,10 @@ namespace Laminal.Server.Controllers
         //    //return Ok(patchDoc);
         //}
 
-        [HttpPost]
-        public async Task SetTaskProperty([FromBody] SetTaskPropertyCommand command)
+        [HttpPost, Publish]
+        public async Task SetTaskProperty([FromBody] SetTaskPropertyCommand command, CancellationToken cancellationToken = default)
         {
-            await _taskService.SetTaskProperty(command);
+            await _taskService.SetTaskProperty(command, cancellationToken);
         }
     }
 }
