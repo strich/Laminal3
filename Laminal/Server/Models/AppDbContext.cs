@@ -1,11 +1,15 @@
 ﻿using Laminal.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Stl.Fusion.EntityFramework;
+using Stl.Fusion.EntityFramework.Operations;
 
 namespace Laminal.Server.Models
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : DbContextBase
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        // Stl.Fusion.EntityFramework tables
+        public DbSet<DbOperation> Operations { get; protected set; } = null!;
         public DbSet<Shared.Models.Task> Tasks { get; set; }
         public DbSet<Shared.Models.TaskProperty> TaskProperties { get; set; }
         //public DbSet<TemplateFeature> TemplateTasks { get; set; }

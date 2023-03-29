@@ -14,20 +14,18 @@ using Stl.Fusion;
 
 namespace Laminal.Server.Services
 {
-    public class TaskService : ITaskService
+    public class TaskService : DbServiceBase<AppDbContext>, ITaskService
     {
-        private readonly DbHub<AppDbContext> _dbHub;
         ILogger<BaseAPIController> _logger;
         IConfiguration _configuration;
         readonly IDbEntityResolver<int, Shared.Models.Task> _taskResolver;
         readonly IDbEntityResolver<int, Shared.Models.Project> _projectResolver;
         readonly IDbEntityResolver<int, Shared.Models.TaskProperty> _taskPropertyResolver;
 
-        public TaskService(DbHub<AppDbContext> dbHub, ILogger<BaseAPIController> logger, IConfiguration config,
+        public TaskService(IServiceProvider services, ILogger<BaseAPIController> logger, IConfiguration config,
             IDbEntityResolver<int, Shared.Models.Task> taskResolver, IDbEntityResolver<int, Project> projectResolver, 
-            IDbEntityResolver<int, TaskProperty> taskPropertyResolver)
+            IDbEntityResolver<int, TaskProperty> taskPropertyResolver) : base(services)
         {
-            _dbHub = dbHub;
             _logger = logger;
             _configuration = config;
             _taskResolver = taskResolver;
@@ -53,36 +51,31 @@ namespace Laminal.Server.Services
 
         public virtual async Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default)
         {
-            //return new List<Shared.Models.Task>() { new Shared.Models.Task() { Name = "Test" } };
-            var project = await _projectResolver.Get(projectId, cancellationToken);
-            if(project == null) return new List<Shared.Models.Task>();
+            var dbContext = CreateDbContext();
+            await using var _ = dbContext.ConfigureAwait(false);
+
+            var project = await dbContext.Projects.Include(p => p.Tasks)
+                .ThenInclude(t => t.Properties)
+                .FirstAsync(p => p.Id == projectId).ConfigureAwait(false);
 
             // HACK to work around lack of circular ref handling for now:
             foreach(var task in project.Tasks) task.OwnerProject = null;
 
             return await Task.FromResult(project.Tasks);
-            //await using var context = _dbHub.CreateDbContext();
-            //return await context.Tasks.Include(t => t.Properties).ToListAsync();
         }
 
         public virtual async Task SetTaskProperty(SetTaskPropertyCommand command, CancellationToken cancellationToken = default)
         {
-            //await using var context = await _dbHub.CreateCommandDbContext();
-            //await using var context = _dbHub.CreateDbContext(true);
-            //var tp = await context.TaskProperties.FirstOrDefaultAsync(t => t.Id == command.TaskPropertyId);
-            //tp.Value = command.Value;
-            //await context.SaveChangesAsync();
-
             if(Computed.IsInvalidating())
             {
                 _ = GetTaskProperty(command.TaskPropertyId, cancellationToken);
                 return;
             }
 
-            await using var context = await _dbHub.CreateCommandDbContext();
+            await using var context = await CreateCommandDbContext().ConfigureAwait(false);
             var tp = await context.TaskProperties.FindAsync(command.TaskPropertyId);
             tp.Value = command.Value;
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
 
         //public async Task PatchTask(int id, JsonPatchDocument<Shared.Models.Task> patchDoc)
