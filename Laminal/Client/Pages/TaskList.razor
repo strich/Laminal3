@@ -1,4 +1,5 @@
 ﻿@page "/tasklist"
+@using Laminal.Client.Components.TasksList
 @using Laminal.Shared.Services
 @using Stl.Fusion.Authentication;
 @using Stl.Fusion.Blazor
@@ -41,8 +42,7 @@
                         @foreach(var tp in task.Properties)
                         {
                             <td>
-                                <MudTextField @bind-Value="tp.Value" Label="Standard" Variant="Variant.Text"
-                                  DebounceInterval="300" OnDebounceIntervalElapsed="@(e => OnDebounceIntervalElapsed(e, tp))"></MudTextField>
+                                <TaskPropertyField TaskPropertyId="@tp.Id"/>
                             </td>
                         }
                         @*<td>@task.WorkHrs</td>*@
@@ -101,7 +101,7 @@
 
     public record Model
     {
-        public IEnumerable<Task>? Tasks { get; init; } = new List<Task>();
+        public IList<Task> Tasks { get; init; } = new List<Task>();
     }
 
     protected override void OnInitialized()
@@ -119,12 +119,17 @@
 
     protected override async Task<Model> ComputeState(CancellationToken cancellationToken)
     {
-        var tasks = await Tasks.GetTasks(1, cancellationToken);
-        if(!MutableState.Value.IsNameModified) ResetName("Test Name");
-        return new Model()
+        var model = new Model();
+        var taskIds = await Tasks.GetTasks(1, cancellationToken);
+        foreach(var taskId in taskIds)
         {
-            Tasks = tasks
-        };
+            var task = await Tasks.GetTask(taskId, cancellationToken);
+            model.Tasks.Add(task);
+        }
+
+        if(!MutableState.Value.IsNameModified) ResetName("Test Name");
+
+        return model;
     }
 
     private void ResetName(string name)
@@ -132,12 +137,5 @@
         MutableState.Value.Name = name;
         MutableState.Value.IsNameModified = false;
         MutableState.Invalidate();
-    }
-
-    async void OnDebounceIntervalElapsed(string text, Laminal.Shared.Models.TaskProperty tp)
-    {
-        Console.WriteLine("OnDebounceIntervalElapsed");
-        tp.SetValue(text);
-        await Tasks.SetTaskProperty(new SetTaskPropertyCommand(tp.Id, text));
     }
 }

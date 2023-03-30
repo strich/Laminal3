@@ -49,25 +49,26 @@ namespace Laminal.Server.Services
             return await _taskPropertyResolver.Get(tpId, cancellationToken);
         }
 
-        public virtual async Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default)
+        public virtual async Task<IList<int>> GetTasks(int projectId, CancellationToken cancellationToken = default)
         {
             var dbContext = CreateDbContext();
             await using var _ = dbContext.ConfigureAwait(false);
 
             var project = await dbContext.Projects.Include(p => p.Tasks)
-                .ThenInclude(t => t.Properties)
+                //.ThenInclude(t => t.Properties)
                 .FirstAsync(p => p.Id == projectId).ConfigureAwait(false);
 
             // HACK to work around lack of circular ref handling for now:
             foreach(var task in project.Tasks) task.OwnerProject = null;
 
-            return await Task.FromResult(project.Tasks);
+            return await Task.FromResult(project.Tasks.Select(t => t.Id).ToList());
         }
 
         public virtual async Task SetTaskProperty(SetTaskPropertyCommand command, CancellationToken cancellationToken = default)
         {
             if(Computed.IsInvalidating())
             {
+                _ = GetTasks(1, cancellationToken);
                 _ = GetTaskProperty(command.TaskPropertyId, cancellationToken);
                 return;
             }

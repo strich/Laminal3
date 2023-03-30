@@ -1,0 +1,46 @@
+﻿@using Laminal.Shared.Models;
+@using Laminal.Shared.Services
+@using Stl.Fusion.Authentication;
+@using Stl.Fusion.Blazor
+@using System.Collections.ObjectModel;
+@using Stl.Fusion;
+@using Stl.Fusion.UI;
+@inherits ComputedStateComponent<TaskPropertyField.Model>
+@inject ITaskService Tasks
+
+@{
+    var state = State.LastNonErrorValue;
+    var error = State.Error;
+    var m = State.Value;
+    if(m == null) return;
+}
+
+<MudTextField @bind-Value="state.TaskProperty.Value" Label="Standard" Variant="Variant.Text" TextChanged="OnDebounceIntervalElapsed" />
+
+@code {
+    [Parameter] public int TaskPropertyId { get; set; }
+
+    public record Model
+    {
+        public TaskProperty TaskProperty { get; set; } = new();
+    }
+
+    protected override void OnInitialized()
+    {
+        // Mutable state content is updated implicitly via bind-* here,
+        // and since such a change doesn't trigger State recompute + StateHasChanged(),
+        // we enable this feat. to make it happen on event.
+        MustCallStateHasChangedAfterEvent = true;
+        base.OnInitialized();
+    }
+
+    protected override async Task<Model> ComputeState(CancellationToken cancellationToken)
+    {
+        return new Model() { TaskProperty = await Tasks.GetTaskProperty(TaskPropertyId, cancellationToken) };
+    }
+
+    async void OnDebounceIntervalElapsed(string text)
+    {
+        await Tasks.SetTaskProperty(new SetTaskPropertyCommand(TaskPropertyId, text));
+    }
+}

@@ -17,6 +17,8 @@ namespace Laminal.Shared.Models
     {
         public int Id { get; set; }
         public List<TaskProperty> Properties { get; set; } = new();
+        [NotMapped]
+        public List<int> PropertyIds { get; set; } = new();
         public string Name { get; set; } = "";
         public TaskStatus Status { get; set; }
         public TaskType TaskType { get; set; }

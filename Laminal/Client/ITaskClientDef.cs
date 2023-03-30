@@ -16,7 +16,7 @@ namespace Laminal.Client
         [Get(nameof(GetTask))]
         Task<Laminal.Shared.Models.Task> GetTask(int taskId, CancellationToken cancellationToken = default);
         [Get(nameof(GetTasks))]
-        Task<IList<Laminal.Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default);
+        Task<IList<int>> GetTasks(int projectId, CancellationToken cancellationToken = default);
         [Get(nameof(GetTaskProperty))]
         Task<Laminal.Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default);
         [Post(nameof(SetTaskProperty))]

@@ -75,7 +75,7 @@ namespace Laminal.Server.Controllers
         }
 
         [HttpGet, Publish]
-        public async Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default)
+        public async Task<IList<int>> GetTasks(int projectId, CancellationToken cancellationToken = default)
             => await _taskService.GetTasks(projectId, cancellationToken);
 
         [HttpGet, Publish]

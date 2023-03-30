@@ -11,7 +11,7 @@ namespace Laminal.Shared.Services
     public interface ITaskService : IComputeService
     {
         [ComputeMethod]
-        Task<IList<Shared.Models.Task>> GetTasks(int projectId, CancellationToken cancellationToken = default);
+        Task<IList<int>> GetTasks(int projectId, CancellationToken cancellationToken = default);
         [ComputeMethod]
         Task<Models.Task> GetTask(int taskId, CancellationToken cancellationToken = default);
         [ComputeMethod]
