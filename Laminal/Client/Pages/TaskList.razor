@@ -6,13 +6,12 @@
 @using System.Collections.ObjectModel;
 @using Stl.Fusion;
 @using Stl.Fusion.UI;
-@inherits MixedStateComponent<TaskList.Model, TaskList.LocalsModel>
+@inherits ComputedStateComponent<TaskList.Model>
 @inject HttpClient httpClient
 @inject ITaskService Tasks
 @inject UICommander UICommander
 
 @{
-    var locals = MutableState.Value;
     var state = State.LastNonErrorValue;
     var error = State.Error;
 }
@@ -52,6 +51,8 @@
         </tbody>
     </table>
 
+    <MudButton OnClick="CreateTaskOnClick">Create Task</MudButton>
+
 @*    <MudDataGrid T="Task" MultiSelection="true" Items="@Elements" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
                  Hideable="true" RowClick="@RowClicked" SelectedItemsChanged="@SelectedItemsChanged">
         <ToolBarContent>
@@ -78,27 +79,6 @@
 </MudContainer>
 
 @code {
-    //[Inject] private Session Session { get; init; } = null!;
-
-    public class LocalsModel
-    {
-        private string _name = "";
-
-        public string Name
-        {
-            get => _name;
-            set
-            {
-                if(_name == value)
-                    return;
-                _name = value;
-                IsNameModified = true;
-            }
-        }
-
-        public bool IsNameModified { get; set; }
-    }
-
     public record Model
     {
         public IList<Task> Tasks { get; init; } = new List<Task>();
@@ -113,8 +93,6 @@
         base.OnInitialized();
     }
 
-    protected override MutableState<LocalsModel>.Options GetMutableStateOptions() => new() { InitialValue = new() };
-
     protected override ComputedState<Model>.Options GetStateOptions() => new() { InitialValue = new() };
 
     protected override async Task<Model> ComputeState(CancellationToken cancellationToken)
@@ -127,15 +105,15 @@
             model.Tasks.Add(task);
         }
 
-        if(!MutableState.Value.IsNameModified) ResetName("Test Name");
-
         return model;
     }
 
-    private void ResetName(string name)
+    async void CreateTaskOnClick()
     {
-        MutableState.Value.Name = name;
-        MutableState.Value.IsNameModified = false;
-        MutableState.Invalidate();
+        await Tasks.CreateTask(new CreateTaskCommand(1, new Task()
+        {
+            Name = "New Task",
+            OwnerProject = new Laminal.Shared.Models.Project()
+        }));
     }
 }

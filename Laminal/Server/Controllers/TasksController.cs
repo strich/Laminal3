@@ -9,6 +9,7 @@ using Stl.Fusion.Server;
 using System.Security.Cryptography;
 using Stl.Fusion.EntityFramework;
 using Task = System.Threading.Tasks.Task;
+using Stl.CommandR.Configuration;
 
 namespace Laminal.Server.Controllers
 {
@@ -90,12 +91,11 @@ namespace Laminal.Server.Controllers
             return await _taskService.GetTaskProperty(tpId, cancellationToken);
         }
 
-        //[HttpPatch("{id}")]
-        //public async Task PatchTask(int id, [FromBody] JsonPatchDocument<Shared.Models.Task> patchDoc)
-        //{
-        //    await _taskService.PatchTask(id, patchDoc);
-        //    //return Ok(patchDoc);
-        //}
+        [HttpPost, Publish]
+        public async Task CreateTask([FromBody] CreateTaskCommand command, CancellationToken cancellationToken = default)
+        {
+            await _taskService.CreateTask(command, cancellationToken);
+        }
 
         [HttpPost, Publish]
         public async Task SetTaskProperty([FromBody] SetTaskPropertyCommand command, CancellationToken cancellationToken = default)

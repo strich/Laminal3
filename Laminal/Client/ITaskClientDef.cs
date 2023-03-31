@@ -1,12 +1,5 @@
 ﻿using Laminal.Shared.Services;
 using RestEase;
-using Stl;
-using Stl.Fusion;
-using Stl.Fusion.Authentication;
-using Stl.Text;
-using System.Reactive;
-using System.Reflection;
-using System.Runtime.Serialization;
 
 namespace Laminal.Client
 {
@@ -21,5 +14,7 @@ namespace Laminal.Client
         Task<Laminal.Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default);
         [Post(nameof(SetTaskProperty))]
         Task SetTaskProperty([Body] SetTaskPropertyCommand command, CancellationToken cancellationToken = default);
+        [Post(nameof(CreateTask))]
+        Task CreateTask([Body] CreateTaskCommand command, CancellationToken cancellationToken = default);
     }
 }

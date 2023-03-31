@@ -18,7 +18,8 @@ namespace Laminal.Shared.Services
         Task<Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default);
         [CommandHandler]
         Task SetTaskProperty(SetTaskPropertyCommand command, CancellationToken cancellationToken = default);
-        //Task PatchTask(int id, JsonPatchDocument<Models.Task> patchDoc);
+        [CommandHandler]
+        Task CreateTask(CreateTaskCommand command, CancellationToken cancellationToken = default);
     }
 
     [DataContract]
@@ -26,5 +27,12 @@ namespace Laminal.Shared.Services
         //[property: DataMember] Session Session,
         [property: DataMember] int TaskPropertyId,
         [property: DataMember] string Value
+    ) : ICommand<Unit>;//: ISessionCommand<Unit>;
+
+    [DataContract]
+    public sealed record CreateTaskCommand(
+        //[property: DataMember] Session Session,
+        [property: DataMember] int ProjectId,
+        [property: DataMember] Models.Task NewTask
     ) : ICommand<Unit>;//: ISessionCommand<Unit>;
 }

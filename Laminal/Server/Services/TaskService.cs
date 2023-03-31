@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Laminal.Shared.Models;
 using Task = System.Threading.Tasks.Task;
 using Stl.Fusion;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Laminal.Server.Services
 {
@@ -33,30 +34,37 @@ namespace Laminal.Server.Services
             _taskPropertyResolver = taskPropertyResolver;
         }
 
+        public virtual async Task CreateTask(CreateTaskCommand command, CancellationToken cancellationToken = default)
+        {
+            if(Computed.IsInvalidating())
+            {
+                _ = GetTasks(command.ProjectId, cancellationToken);
+                return;
+            }
+            await using var context = await CreateCommandDbContext();
+
+            var newTask = command.NewTask;
+            var project = await context.Projects.FirstAsync(p => p.Id == command.ProjectId);
+            newTask.OwnerProject = project;
+            await context.Tasks.AddAsync(newTask);
+            project.Tasks.Add(newTask);
+            context.Update(project);
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         public virtual async Task<Shared.Models.Task> GetTask(int taskId, CancellationToken cancellationToken = default)
         {
-            var task = await _taskResolver.Get(taskId, cancellationToken);
-            //await using var context = _dbHub.CreateDbContext();
-            //var task = await context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
-            return task;
+            return await _taskResolver.Get(taskId, cancellationToken);
         }
 
         public virtual async Task<Shared.Models.TaskProperty> GetTaskProperty(int tpId, CancellationToken cancellationToken = default)
         {
-            //await using var context = _dbHub.CreateDbContext();
-            //var task = await context.Tasks.Include(t => t.Properties).FirstOrDefaultAsync(t => t.Id == taskId);
-            //return task.Properties.FirstOrDefault(v => v.Name == name);
             return await _taskPropertyResolver.Get(tpId, cancellationToken);
         }
 
         public virtual async Task<IList<int>> GetTasks(int projectId, CancellationToken cancellationToken = default)
         {
-            var dbContext = CreateDbContext();
-            await using var _ = dbContext.ConfigureAwait(false);
-
-            var project = await dbContext.Projects.Include(p => p.Tasks)
-                //.ThenInclude(t => t.Properties)
-                .FirstAsync(p => p.Id == projectId).ConfigureAwait(false);
+            var project = await _projectResolver.Get(projectId, cancellationToken);
 
             // HACK to work around lack of circular ref handling for now:
             foreach(var task in project.Tasks) task.OwnerProject = null;
@@ -68,31 +76,14 @@ namespace Laminal.Server.Services
         {
             if(Computed.IsInvalidating())
             {
-                _ = GetTasks(1, cancellationToken);
                 _ = GetTaskProperty(command.TaskPropertyId, cancellationToken);
                 return;
             }
 
-            await using var context = await CreateCommandDbContext().ConfigureAwait(false);
+            await using var context = await CreateCommandDbContext();
             var tp = await context.TaskProperties.FindAsync(command.TaskPropertyId);
             tp.Value = command.Value;
-            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await context.SaveChangesAsync(cancellationToken);
         }
-
-        //public async Task PatchTask(int id, JsonPatchDocument<Shared.Models.Task> patchDoc)
-        //{
-        //    var task = await _context.Tasks.FindAsync(id);
-        //    if(task == null)
-        //    {
-        //        return;
-        //        //return new NotFoundResult();
-        //    }
-
-        //    patchDoc.ApplyTo(task);
-        //    await _context.SaveChangesAsync();
-
-        //    return;
-        //    //return new NoContentResult();
-        //}
     }
 }
