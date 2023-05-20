@@ -41,10 +41,21 @@ namespace Laminal.Server.Services
                 _ = GetTasks(command.ProjectId, cancellationToken);
                 return;
             }
-            await using var context = await CreateCommandDbContext();
+            var context = await CreateCommandDbContext(cancellationToken);
 
-            var newTask = command.NewTask;
-            var project = await context.Projects.FirstAsync(p => p.Id == command.ProjectId);
+            var newTask = new Shared.Models.Task();
+            //var newTask = command.NewTask; // This causes a crash due to accessing the class
+            for(int x = 0; x < 3; x++)
+            {
+                var tp = new TaskProperty()
+                {
+                    Name = $"Property {x}",
+                    Value = ""
+                };
+                newTask.Properties.Add(tp);
+                await context.TaskProperties.AddAsync(tp);
+            }
+            var project = await context.Projects.Include(p => p.Tasks).FirstAsync(p => p.Id == command.ProjectId);
             newTask.OwnerProject = project;
             await context.Tasks.AddAsync(newTask);
             project.Tasks.Add(newTask);

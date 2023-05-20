@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="7.0.4" />
-    <PackageReference Include="Stl.Fusion" Version="5.1.6" />
-    <PackageReference Include="Stl.Generators" Version="5.1.6" />
+    <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="7.0.5" />
+    <PackageReference Include="Stl.Fusion" Version="5.2.57" />
+    <PackageReference Include="Stl.Generators" Version="5.2.57" />
   </ItemGroup>
 
   <ItemGroup>
